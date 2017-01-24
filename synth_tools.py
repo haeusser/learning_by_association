@@ -23,11 +23,11 @@ They are used in svhn_train.py and svhn_eval.py.
 import numpy as np
 import scipy.io
 import tensorflow as tf
-import tf.contrib.slim as slim
-from tf.python.platform import gfile
+import tensorflow.contrib.slim as slim
+from tensorflow.python.platform import gfile
 
 
-
+DATADIR = '/work/haeusser/data/synth/'
 NUM_LABELS = 10
 IMAGE_SHAPE = [32, 32, 3]
 
@@ -42,14 +42,13 @@ def get_data(name, num=70000):
   Returns:
    images, labels
   """
-  datadir = 'path_to_synth'
 
   if name == 'train' or name == 'unlabeled':
     fn = 'synth_train_32x32.mat'
   elif name == 'test':
     fn = 'synth_test_32x32.mat'
 
-  data = scipy.io.loadmat(gfile.Open(datadir + fn))
+  data = scipy.io.loadmat(DATADIR + fn)
 
   images = np.rollaxis(data['X'], -1)
   labels = data['y'].ravel() % 10

@@ -16,12 +16,10 @@ limitations under the License.
 Utility functions for Association-based semisupervised training.
 """
 
-import google3
-
 import numpy as np
 
 import tensorflow as tf
-import tf.contrib.slim as slim
+import tensorflow.contrib.slim as slim
 
 
 def create_input(input_images, input_labels, batch_size):
@@ -65,7 +63,7 @@ def create_per_class_inputs(image_by_class, n_per_class, class_labels=None):
     images, labels = create_input(images, labels, n_per_class)
     batch_images.append(images)
     batch_labels.append(labels)
-  return tf.concat(0, batch_images), tf.concat(0, batch_labels)
+  return tf.concat_v2(batch_images, 0), tf.concat_v2(batch_labels, 0)
 
 
 def sample_by_label(images, labels, n_per_label, num_labels, seed=None):
@@ -173,11 +171,15 @@ class SemisupModel(object):
     p_aba = tf.matmul(p_ab, p_ba, name='p_aba')
 
     self.create_walk_statistics(p_aba, equality_matrix)
-    loss_aba = slim.losses.softmax_cross_entropy(
-        tf.log(1e-8 + p_aba), p_target, weight=walker_weight, scope='loss_aba')
+    
+    loss_aba = tf.losses.softmax_cross_entropy(
+        p_target,
+        tf.log(1e-8 + p_aba),
+        weights=walker_weight,
+        scope='loss_aba')
     self.add_visit_loss(p_ab, visit_weight)
 
-    slim.summaries.add_scalar_summary(loss_aba, 'Loss_aba')
+    tf.summary.scalar('Loss_aba', loss_aba)
 
   def add_visit_loss(self, p, weight=1.0):
     """Add the "visit" loss to the model.
@@ -190,25 +192,25 @@ class SemisupModel(object):
     visit_probability = tf.reduce_mean(
         p, [0], keep_dims=True, name='visit_prob')
     t_nb = tf.shape(p)[1]
-    visit_loss = slim.losses.softmax_cross_entropy(
-        tf.log(1e-8 + visit_probability),
+    visit_loss = tf.losses.softmax_cross_entropy(
         tf.fill([1, t_nb], 1.0 / tf.cast(t_nb, tf.float32)),
-        weight=weight,
+        tf.log(1e-8 + visit_probability),
+        weights=weight,
         scope='loss_visit')
 
-    slim.summaries.add_scalar_summary(visit_loss, 'Loss_Visit')
+    tf.summary.scalar('Loss_Visit', visit_loss)
 
   def add_logit_loss(self, logits, labels, weight=1.0, smoothing=0.0):
     """Add supervised classification loss to the model."""
 
-    logit_loss = slim.losses.softmax_cross_entropy(
-        logits,
+    logit_loss = tf.losses.softmax_cross_entropy(
         tf.one_hot(labels, logits.get_shape()[-1]),
+        logits,
         scope='loss_logit',
-        weight=weight,
+        weights=weight,
         label_smoothing=smoothing)
 
-    slim.summaries.add_scalar_summary(logit_loss, 'Loss_Logit')
+    tf.summary.scalar('Loss_Logit', logit_loss)
 
   def create_walk_statistics(self, p_aba, equality_matrix):
     """Adds "walker" loss statistics to the graph.
@@ -228,7 +230,7 @@ class SemisupModel(object):
     self.add_average(estimate_error)
     self.add_average(p_aba)
 
-    slim.summaries.add_scalar_summary(estimate_error, 'Stats_EstError')
+    tf.summary.scalar('Stats_EstError', estimate_error)
 
   def add_average(self, variable):
     """Add moving average variable to the model."""
@@ -243,12 +245,12 @@ class SemisupModel(object):
     slim.model_analyzer.analyze_vars(
         tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES), print_info=True)
 
-    self.train_loss = slim.losses.get_total_loss()
+    self.train_loss = tf.losses.get_total_loss()
     self.train_loss_average = self.add_average(self.train_loss)
 
-    slim.summaries.add_scalar_summary(learning_rate, 'Learning Rate')
-    slim.summaries.add_scalar_summary(self.train_loss_average, 'Loss_Total_Avg')
-    slim.summaries.add_scalar_summary(self.train_loss, 'Loss_Total')
+    tf.summary.scalar('Learning_Rate', learning_rate)
+    tf.summary.scalar('Loss_Total_Avg', self.train_loss_average)
+    tf.summary.scalar('Loss_Total', self.train_loss)
 
     trainer = tf.train.AdamOptimizer(learning_rate)
 

@@ -25,9 +25,10 @@ import gzip
 import numpy as np
 
 import tensorflow as tf
-import tf.contrib.slim as slim
-from tf.python.platform import gfile
-import semisup
+import tensorflow.contrib.slim as slim
+
+
+DATADIR = '/work/haeusser/data/mnist/'
 
 
 NUM_LABELS = 10
@@ -36,16 +37,15 @@ IMAGE_SHAPE = [28, 28, 1]
 
 def get_data(name):
   """Utility for convenient data loading."""
-  datadir = 'path_to_mnist'
 
   if name == 'train':
-    return extract_images(datadir +
+    return extract_images(DATADIR +
                           '/train-images-idx3-ubyte.gz'), extract_labels(
-                              datadir + '/train-labels-idx1-ubyte.gz')
+                              DATADIR + '/train-labels-idx1-ubyte.gz')
   elif name == 'test':
-    return extract_images(datadir +
+    return extract_images(DATADIR +
                           '/t10k-images-idx3-ubyte.gz'), extract_labels(
-                              datadir + '/t10k-labels-idx1-ubyte.gz')
+                              DATADIR + '/t10k-labels-idx1-ubyte.gz')
 
 
 def _read32(bytestream):
@@ -56,7 +56,7 @@ def _read32(bytestream):
 def extract_images(filename):
   """Extract the images into a 4D uint8 numpy array [index, y, x, depth]."""
   print('Extracting', filename)
-  with gfile.Open(filename, 'r') as f, gzip.GzipFile(fileobj=f) as bytestream:
+  with open(filename, 'r') as f, gzip.GzipFile(fileobj=f) as bytestream:
     magic = _read32(bytestream)
     if magic != 2051:
       raise ValueError('Invalid magic number %d in MNIST image file: %s' %
@@ -73,7 +73,7 @@ def extract_images(filename):
 def extract_labels(filename):
   """Extract the labels into a 1D uint8 numpy array [index]."""
   print('Extracting', filename)
-  with gfile.Open(filename, 'r') as f, gzip.GzipFile(fileobj=f) as bytestream:
+  with open(filename, 'r') as f, gzip.GzipFile(fileobj=f) as bytestream:
     magic = _read32(bytestream)
     if magic != 2049:
       raise ValueError('Invalid magic number %d in MNIST label file: %s' %

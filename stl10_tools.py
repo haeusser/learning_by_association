@@ -22,12 +22,11 @@ They are used in stl10_train.py and stl10_eval.py.
 """
 import numpy as np
 import tensorflow as tf
-import tf.contrib.slim as slim
-from tf.python.platform import tf_logging as logging
-from tf.python.platform import gfile
-import semisup
+import tensorflow.contrib.slim as slim
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.platform import gfile
 
-
+DATADIR = '/work/haeusser/data/stl10_binary/'
 NUM_LABELS = 10
 IMAGE_SHAPE = [96, 96, 3]
 
@@ -42,16 +41,15 @@ def get_data(name, max_num=20000):
     A tuple containing (images, labels) where lables=None for the unlabeled
     split.
   """
-  datadir = 'path_to_stl10_binary/'
   if name == 'train':
-    return extract_images(datadir + 'train_X.bin',
-                          IMAGE_SHAPE), extract_labels(datadir + 'train_y.bin')
+    return extract_images(DATADIR + 'train_X.bin',
+                          IMAGE_SHAPE), extract_labels(DATADIR + 'train_y.bin')
   elif name == 'test':
-    return extract_images(datadir + 'test_X.bin',
-                          IMAGE_SHAPE), extract_labels(datadir + 'test_y.bin')
+    return extract_images(DATADIR + 'test_X.bin',
+                          IMAGE_SHAPE), extract_labels(DATADIR + 'test_y.bin')
 
   elif name == 'unlabeled':
-    res = extract_images(datadir + 'unlabeled_X.bin', IMAGE_SHAPE)
+    res = extract_images(DATADIR + 'unlabeled_X.bin', IMAGE_SHAPE)
     num_images = len(res)
     if num_images > max_num:
       rng = np.random.RandomState()

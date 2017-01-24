@@ -23,11 +23,12 @@ import importlib
 import math
 
 import tensorflow as tf
-import tf.contrib.slim as slim
-import tf.app as app
-import semisup
+from tensorflow.contrib.semisup.python.semisup import semisup
+import tensorflow.contrib.slim as slim
+from tensorflow.python.platform import app
+from tensorflow.python.platform import flags
 
-flags = tf.app.flags
+
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('package', 'mnist', 'Which package/dataset to work on.')

@@ -16,19 +16,22 @@ limitations under the License.
 Association-based semi-supervised training module.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from functools import partial
-import importlib
 import numpy as np
 import tensorflow as tf
-from OpenCVX import cvx2 as cv2
+import cv2
 
-import tf.app as app
-import tf.contrib.slim as slim
-from slim import preprocess
+import tensorflow.contrib.semisup as semisup
+from tensorflow.python.platform import app
+from tensorflow.python.platform import flags
 
-import semisup
+import tensorflow.contrib.slim as slim
 
-flags = tf.app.flags
+
 FLAGS = flags.FLAGS
 
 
@@ -54,12 +57,6 @@ flags.DEFINE_float('learning_rate', 1e-4, 'Initial learning rate.')
 
 flags.DEFINE_float('minimum_learning_rate', 1e-6,
                    'Lower bound for learning rate.')
-
-flags.DEFINE_multi_float('custom_lr_vals', None,
-                         'For custom lr schedule: lr values.')
-
-flags.DEFINE_multi_int('custom_lr_steps', None,
-                       'For custom lr schedule: step values.')
 
 flags.DEFINE_float('decay_factor', 0.33, 'Learning rate decay factor.')
 
@@ -103,7 +100,7 @@ flags.DEFINE_integer('remove_classes', 0,
                      'Remove this number of classes from the labeled set, '
                      'starting with highest label number.')
 
-flags.DEFINE_string('master', 'local',
+flags.DEFINE_string('master', '',
                     'BNS name of the TensorFlow master to use.')
 
 flags.DEFINE_integer(
@@ -116,8 +113,15 @@ flags.DEFINE_integer(
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
 
-FLAGS = flags.FLAGS
+# TODO(haeusser) convert to argparse as gflags will be discontinued
+#flags.DEFINE_multi_float('custom_lr_vals', None,
+#                         'For custom lr schedule: lr values.')
 
+#flags.DEFINE_multi_int('custom_lr_steps', None,
+#                       'For custom lr schedule: step values.')
+
+FLAGS.custom_lr_vals = None
+FLAGS.custom_lr_steps = None
 
 # Data augmentation routines
 def tf_affine_transformation(imgs, shape, batch_size):
@@ -321,8 +325,8 @@ def piecewise_constant(x, boundaries, values, name=None):
 
 def main(_):
   # Dynamic import of the set of tools containing the network architecture etc.
-  tools = importlib.import_module('google3.learning.brain.experimental.semisup.'
-                                  + FLAGS.package + '_tools')
+  #tools = importlib.import_module('semisup.' + FLAGS.package + '_tools')  # TODO(haeusser) remove this and importlib
+  tools = getattr(semisup, FLAGS.package + '_tools')
 
   num_labels = tools.NUM_LABELS
   image_shape = tools.IMAGE_SHAPE
@@ -352,7 +356,7 @@ def main(_):
 
   graph = tf.Graph()
   with graph.as_default():
-    with tf.device(tf.ReplicaDeviceSetter(FLAGS.ps_tasks, merge_devices=True)):
+    with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks, merge_devices=True)):
 
       # Set up inputs.
       t_unsup_images = semisup.create_input(train_images_unlabeled, None,
@@ -419,7 +423,7 @@ def main(_):
                                        FLAGS.max_steps)
       else:
         visit_weight = FLAGS.visit_weight
-      slim.summaries.add_scalar_summary(visit_weight, 'VisitLossWeight')
+      tf.summary.scalar('VisitLossWeight', visit_weight)
 
       if FLAGS.unsup_samples != 0:
         model.add_semisup_loss(
@@ -446,6 +450,7 @@ def main(_):
 
       # Create training operation and start the actual training loop.
       train_op = model.create_train_op(t_learning_rate)
+
       slim.learning.train(
           train_op,
           logdir=FLAGS.logdir,
@@ -458,5 +463,5 @@ def main(_):
 
 
 if __name__ == '__main__':
-  FLAGS.alsologtostderr = 1
+  tf.logging.set_verbosity(tf.logging.INFO)
   app.run()
