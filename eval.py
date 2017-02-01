@@ -38,7 +38,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('package', 'svhn', 'Which package/dataset to work on.')
 
-flags.DEFINE_integer('eval_batch_size', 500, 'Batch size for eval loop.')
+flags.DEFINE_integer('eval_batch_size', 1000, 'Batch size for eval loop.')
 
 flags.DEFINE_integer('new_size', 0, 'If > 0, resize image to this width/height.'
                      'Needs to match size used for training.')
