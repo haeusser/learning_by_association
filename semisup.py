@@ -135,12 +135,12 @@ class SemisupModel(object):
 
   def image_to_embedding(self, images, is_training=True):
     """Create a graph, transforming images into embedding vectors."""
-    with tf.variable_scope('mnist', reuse=is_training):
+    with tf.variable_scope('net', reuse=is_training):
       return self.model_func(images, is_training=is_training)
 
   def embedding_to_logit(self, embedding, is_training=True):
     """Create a graph, transforming embedding vectors to logit classs scores."""
-    with tf.variable_scope('mnist', reuse=is_training):
+    with tf.variable_scope('net', reuse=is_training):
       return slim.fully_connected(
           embedding,
           self.num_labels,
