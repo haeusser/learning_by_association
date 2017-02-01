@@ -26,10 +26,10 @@ import tensorflow as tf
 import cv2
 
 import tensorflow.contrib.semisup as semisup
+import tensorflow.contrib.slim as slim
+
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
-
-import tensorflow.contrib.slim as slim
 
 
 FLAGS = flags.FLAGS
@@ -450,6 +450,9 @@ def main(_):
 
       # Create training operation and start the actual training loop.
       train_op = model.create_train_op(t_learning_rate)
+      
+      config = tf.ConfigProto()
+      config.gpu_options.allow_growth = True
 
       slim.learning.train(
           train_op,
@@ -459,7 +462,8 @@ def main(_):
           master=FLAGS.master,
           is_chief=(FLAGS.task == 0),
           startup_delay_steps=(FLAGS.task * 20),
-          log_every_n_steps=FLAGS.log_every_n_steps)
+          log_every_n_steps=FLAGS.log_every_n_steps,
+          session_config=config)
 
 
 if __name__ == '__main__':

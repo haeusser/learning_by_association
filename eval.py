@@ -18,20 +18,25 @@ Association-based semi-supervised eval module.
 This script defines the evaluation loop that works with the training loop
 from train.py.
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from functools import partial
-import importlib
 import math
 
 import tensorflow as tf
-from tensorflow.contrib.semisup.python.semisup import semisup
+import tensorflow.contrib.semisup as semisup
 import tensorflow.contrib.slim as slim
+
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
 
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('package', 'mnist', 'Which package/dataset to work on.')
+flags.DEFINE_string('package', 'svhn', 'Which package/dataset to work on.')
 
 flags.DEFINE_integer('eval_batch_size', 500, 'Batch size for eval loop.')
 
@@ -45,13 +50,13 @@ flags.DEFINE_string('logdir', '/tmp/semisup',
                     'Where the checkpoints are stored '
                     'and eval events will be written to.')
 
-flags.DEFINE_string('master', 'local',
+flags.DEFINE_string('master', '',
                     'BNS name of the TensorFlow master to use.')
 
 
 def main(_):
   # Get dataset-related toolbox.
-  tools = importlib.import_module(FLAGS.package + '_tools')
+  tools = getattr(semisup, FLAGS.package + '_tools')
 
   num_labels = tools.NUM_LABELS
   image_shape = tools.IMAGE_SHAPE
@@ -101,23 +106,27 @@ def main(_):
 
     # Accuracy metric for summaries.
     names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
-        'Accuracy': slim.metrics.accuracy(predictions, labels),
+        'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
     })
     for name, value in names_to_values.iteritems():
-      slim.summaries.add_scalar_summary(
-          value, name, prefix='Eval', print_summary=True)
+      tf.summary.scalar(name, value)
 
     # Run the actual evaluation loop.
     num_batches = math.ceil(len(test_labels) / float(FLAGS.eval_batch_size))
+    
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
     slim.evaluation.evaluation_loop(
         master=FLAGS.master,
         checkpoint_dir=FLAGS.logdir,
         logdir=FLAGS.logdir,
         num_evals=num_batches,
         eval_op=names_to_updates.values(),
-        eval_interval_secs=FLAGS.eval_interval_secs)
+        eval_interval_secs=FLAGS.eval_interval_secs,
+        session_config=config)
+
 
 
 if __name__ == '__main__':
-  FLAGS.alsologtostderr = 1
+  tf.logging.set_verbosity(tf.logging.INFO)
   app.run()
