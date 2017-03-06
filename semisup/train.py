@@ -44,7 +44,7 @@ flags.DEFINE_string('target_dataset', None,
 flags.DEFINE_string('target_dataset_split', 'unlabeled',
                     'Which split of the target dataset to use for domain adaptation.')
 
-flags.DEFINE_string('architecture', 'svhn_model', 'Which dataset to work on.')
+flags.DEFINE_string('architecture', 'svhn_model', 'Which network architecture from architectures.py to use.')
 
 flags.DEFINE_integer('sup_per_class', 100,
                      'Number of labeled samples used per class in total. -1 = all')
