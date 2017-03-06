@@ -12,6 +12,8 @@ Before you get started, please make sure to add the following to your `~/.bashrc
 export PYTHONPATH=/path/to/learning_by_association:$PYTHONPATH
 ```
 
+Copy the file `semisup/data_dirs.py.template` to `semisup/data_dirs.py`, adapt the paths and .gitignore this file.
+
 If you use the code, please cite the paper "Learning by Association - A versatile semi-supervised training method for neural networks."
 ```
 @string{cvpr="IEEE Conference on Computer Vision and Pattern Recognition (CVPR)"}
