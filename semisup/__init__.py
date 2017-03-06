@@ -9,6 +9,7 @@ from . import gtsrb_tools
 from . import svhn_tools
 from . import stl10_tools
 from . import synth_tools
+from . import usps_tools
 from . import architectures
 from . import data_dirs
 from .backend import *
