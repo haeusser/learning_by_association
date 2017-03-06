@@ -16,6 +16,10 @@ limitations under the License.
 Utility functions for Association-based semisupervised training.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 
 import tensorflow as tf
@@ -63,7 +67,7 @@ def create_per_class_inputs(image_by_class, n_per_class, class_labels=None):
     images, labels = create_input(images, labels, n_per_class)
     batch_images.append(images)
     batch_labels.append(labels)
-  return tf.concat_v2(batch_images, 0), tf.concat_v2(batch_labels, 0)
+  return tf.concat(batch_images, 0), tf.concat(batch_labels, 0)
 
 
 def sample_by_label(images, labels, n_per_label, num_labels, seed=None):

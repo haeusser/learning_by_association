@@ -20,13 +20,15 @@ evalutaion on the STL10 dataset.
 They are used in stl10_train.py and stl10_eval.py.
 
 """
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.platform import gfile
+import data_dirs
 
-DATADIR = '/work/haeusser/data/stl10_binary/'
+DATADIR = data_dirs.stl10
 NUM_LABELS = 10
 IMAGE_SHAPE = [96, 96, 3]
 
@@ -108,59 +110,6 @@ def pick_fold(images, labels, fold=-1):
   return images, labels
 
 
-def stl10_model(inputs,
-                is_training=True,
-                augmentation_function=None,
-                emb_size=128,
-                img_shape=None,
-                new_shape=None,
-                image_summary=False,
-                batch_norm_decay=0.99):
-  """Construct the image-to-embedding model."""
-  inputs = tf.cast(inputs, tf.float32)
-  if new_shape is not None:
-    shape = new_shape
-    inputs = tf.image.resize_images(
-        inputs,
-        tf.constant(new_shape[:2]),
-        method=tf.image.ResizeMethod.BILINEAR)
-  else:
-    shape = img_shape
-  if is_training and augmentation_function is not None:
-    inputs = augmentation_function(inputs, shape)
-  if image_summary:
-    tf.image_summary('Inputs', inputs, max_images=3)
-  net = inputs
-  net = (net - 128.0) / 128.0
-  with slim.arg_scope([slim.dropout], is_training=is_training):
-    with slim.arg_scope(
-        [slim.conv2d, slim.fully_connected],
-        normalizer_fn=slim.batch_norm,
-        normalizer_params={
-            'is_training': is_training,
-            'decay': batch_norm_decay
-        },
-        activation_fn=tf.nn.elu,
-        weights_regularizer=slim.l2_regularizer(5e-3),):
-      with slim.arg_scope([slim.conv2d], padding='SAME'):
-        with slim.arg_scope([slim.dropout], is_training=is_training):
-          net = slim.conv2d(net, 32, [3, 3], scope='conv_s2')  #
-          net = slim.conv2d(net, 64, [3, 3], stride=2, scope='conv1')
-          net = slim.max_pool2d(net, [3, 3], stride=2, scope='pool1')  #
-          net = slim.conv2d(net, 64, [3, 3], scope='conv2')
-          net = slim.conv2d(net, 128, [3, 3], scope='conv2_2')
-          net = slim.max_pool2d(net, [2, 2], stride=2, scope='pool2')  #
-          net = slim.conv2d(net, 128, [3, 3], scope='conv3_1')
-          net = slim.conv2d(net, 256, [3, 3], scope='conv3_2')
-          net = slim.max_pool2d(net, [2, 2], stride=2, scope='pool3')  #
-          net = slim.conv2d(net, 128, [3, 3], scope='conv4')
-          net = slim.flatten(net, scope='flatten')
-
-          with slim.arg_scope([slim.fully_connected], normalizer_fn=None):
-            emb = slim.fully_connected(
-                net, emb_size, activation_fn=None, scope='fc1')
-  return emb
-
 # Dataset specific augmentation parameters.
 augmentation_params = dict()
 augmentation_params['max_crop_percentage'] = 0.2
@@ -170,5 +119,3 @@ augmentation_params['saturation_upper'] = 1.2
 augmentation_params['hue_max_delta'] = 0.1
 augmentation_params['gray_prob'] = 0.5
 augmentation_params['max_rotate_angle'] = 10
-
-default_model = stl10_model

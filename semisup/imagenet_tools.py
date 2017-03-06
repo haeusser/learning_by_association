@@ -20,16 +20,15 @@ This file contains functions that are needed for semisup training and
 evalutaion on the SVHN dataset.
 They are used in svhn_train.py and svhn_eval.py.
 """
+from __future__ import division
+from __future__ import print_function
 import os
-import numpy as np
-import scipy.io
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
-from tensorflow.python.platform import gfile
 
+import data_dirs
 
-DATADIR = '/work/haeusser/data/imagenet/raw-data/'
-LABELS_FILE = '/usr/wiss/haeusser/libs/tfmodels/inception/inception/data/imagenet_lsvrc_2015_synsets.txt'
+DATADIR = data_dirs.imagenet
+LABELS_FILE = data_dirs.imagenet_labels
 
 NUM_LABELS = 1000
 IMAGE_SHAPE = [299, 299, 3]
@@ -163,73 +162,3 @@ def _find_image_files(data_dir, labels_file, num_classes=1000):
   print('Found %d JPEG files across %d labels inside %s.' %
         (len(filenames), len(challenge_synsets[:num_classes]), data_dir))
   return filenames, synsets, labels
-
-
-
-def svhn_model(inputs,
-               is_training=True,
-               augmentation_function=None,
-               emb_size=128,
-               l2_weight=1e-4,
-               img_shape=None,
-               new_shape=None,
-               image_summary=False,
-               batch_norm_decay=0.99):  # pylint: disable=unused-argument
-  """Construct the image-to-embedding vector model."""
-  inputs = tf.cast(inputs, tf.float32)
-  if new_shape is not None:
-    shape = new_shape
-    inputs = tf.image.resize_images(
-        inputs,
-        tf.constant(new_shape[:2]),
-        method=tf.image.ResizeMethod.BILINEAR)
-  else:
-    shape = img_shape
-  if is_training and augmentation_function is not None:
-    inputs = augmentation_function(inputs, shape)
-  if image_summary:
-    tf.image_summary('Inputs', inputs, max_images=3)
-
-  net = inputs
-  mean = tf.reduce_mean(net, [1, 2], True)
-  std = tf.reduce_mean(tf.square(net - mean), [1, 2], True)
-  net = (net - mean) / (std + 1e-5)
-  with slim.arg_scope(
-      [slim.conv2d, slim.fully_connected],
-      activation_fn=tf.nn.elu,
-      weights_regularizer=slim.l2_regularizer(l2_weight)):
-    with slim.arg_scope([slim.dropout], is_training=is_training):
-      net = slim.conv2d(net, 32, [3, 3], scope='conv1')
-      net = slim.conv2d(net, 32, [3, 3], scope='conv1_2')
-      net = slim.conv2d(net, 32, [3, 3], scope='conv1_3')
-      net = slim.max_pool2d(net, [2, 2], scope='pool1')  # 14
-      net = slim.conv2d(net, 64, [3, 3], scope='conv2_1')
-      net = slim.conv2d(net, 64, [3, 3], scope='conv2_2')
-      net = slim.conv2d(net, 64, [3, 3], scope='conv2_3')
-      net = slim.max_pool2d(net, [2, 2], scope='pool2')  # 7
-      net = slim.conv2d(net, 128, [3, 3], scope='conv3')
-      net = slim.conv2d(net, 128, [3, 3], scope='conv3_2')
-      net = slim.conv2d(net, 128, [3, 3], scope='conv3_3')
-      net = slim.max_pool2d(net, [2, 2], scope='pool3')  # 3
-      net = slim.flatten(net, scope='flatten')
-
-      with slim.arg_scope([slim.fully_connected], normalizer_fn=None):
-        emb = slim.fully_connected(net, emb_size, scope='fc1')
-
-  return emb
-
-
-def inception_v3(inputs,
-               is_training=True,
-               augmentation_function=None,
-               emb_size=128,
-               l2_weight=1e-4,
-               img_shape=None,
-               new_shape=None,
-               image_summary=False,
-               batch_norm_decay=0.99):  # pylint: disable=unused-argument
-  """Construct the image-to-embedding vector model."""
-  inputs = tf.cast(inputs, tf.float32)
-  
-
-default_model = inception_v3

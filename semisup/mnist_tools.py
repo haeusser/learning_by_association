@@ -21,14 +21,14 @@ They are used in MNIST_train_eval.py.
 
 """
 
+from __future__ import division
+from __future__ import print_function
+
 import gzip
 import numpy as np
+import data_dirs
 
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
-
-
-DATADIR = '/work/haeusser/data/mnist/'
+DATADIR = data_dirs.mnist
 
 
 NUM_LABELS = 10
@@ -83,30 +83,3 @@ def extract_labels(filename):
     labels = np.frombuffer(buf, dtype=np.uint8)
     return labels
 
-
-def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3):  # pylint: disable=unused-argument
-  """Construct the image-to-embedding vector model."""
-
-  inputs = tf.cast(inputs, tf.float32) / 255.0
-  net = inputs
-  with slim.arg_scope(
-      [slim.conv2d, slim.fully_connected],
-      activation_fn=tf.nn.elu,
-      weights_regularizer=slim.l2_regularizer(l2_weight)):
-    net = slim.conv2d(net, 32, [3, 3], scope='conv1_1')
-    net = slim.conv2d(net, 32, [3, 3], scope='conv1_2')
-    net = slim.max_pool2d(net, [2, 2], scope='pool1')  # 14
-
-    net = slim.conv2d(net, 64, [3, 3], scope='conv2_1')
-    net = slim.conv2d(net, 64, [3, 3], scope='conv2_2')
-    net = slim.max_pool2d(net, [2, 2], scope='pool2')  # 7
-
-    net = slim.conv2d(net, 128, [3, 3], scope='conv3_1')
-    net = slim.conv2d(net, 128, [3, 3], scope='conv3_2')
-    net = slim.max_pool2d(net, [2, 2], scope='pool3')  # 3
-
-    net = slim.flatten(net, scope='flatten')
-    emb = slim.fully_connected(net, emb_size, scope='fc1')
-  return emb
-
-default_model = mnist_model

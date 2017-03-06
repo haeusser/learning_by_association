@@ -1,32 +1,9 @@
-"""
-Copyright 2016 Google Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-Association-based semi-supervised training example in MNIST dataset.
-
-Training should reach ~1% error rate on the test set using 100 labeled samples
-in 5000-10000 steps (a few minutes on Titan X GPU)
-
-"""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
-import tensorflow.contrib.semisup as semisup
+import semisup
 
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
@@ -59,18 +36,17 @@ flags.DEFINE_float('visit_weight', 1.0, 'Weight for visit loss.')
 
 flags.DEFINE_integer('max_steps', 20000, 'Number of training steps.')
 
-flags.DEFINE_string('logdir', '/tmp/semisup_mnist', 'Training log path.')
+flags.DEFINE_string('logdir', '/tmp/semisup_gtsrb', 'Training log path.')
 
+gtsrb_tools = semisup.gtsrb_tools
 
-mnist_tools = semisup.mnist_tools
-
-NUM_LABELS = mnist_tools.NUM_LABELS
-IMAGE_SHAPE = mnist_tools.IMAGE_SHAPE
+NUM_LABELS = gtsrb_tools.NUM_LABELS
+IMAGE_SHAPE = gtsrb_tools.IMAGE_SHAPE
 
 
 def main(_):
-  train_images, train_labels = mnist_tools.get_data('train')
-  test_images, test_labels = mnist_tools.get_data('test')
+  train_images, train_labels = gtsrb_tools.get_data('train')
+  test_images, test_labels = gtsrb_tools.get_data('test')
 
   # Sample labeled training subset.
   seed = FLAGS.sup_seed if FLAGS.sup_seed != -1 else None
@@ -79,7 +55,7 @@ def main(_):
 
   graph = tf.Graph()
   with graph.as_default():
-    model = semisup.SemisupModel(mnist_tools.mnist_model, NUM_LABELS,
+    model = semisup.SemisupModel(semisup.architectures.mnist_model, NUM_LABELS,
                                  IMAGE_SHAPE)
 
     # Set up inputs.
@@ -126,7 +102,7 @@ def main(_):
         test_err = (test_labels != test_pred).mean() * 100
         print(conf_mtx)
         print('Test error: %.2f %%' % test_err)
-        print
+        print()
 
         test_summary = tf.Summary(
             value=[tf.Summary.Value(

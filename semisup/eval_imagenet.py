@@ -23,22 +23,26 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from functools import partial
 import math
+import sys
 
 import tensorflow as tf
-import tensorflow.contrib.semisup as semisup
+import semisup
 import tensorflow.contrib.slim as slim
+
 
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
 
+sys.path.insert(0, '/usr/wiss/haeusser/libs/tfmodels/inception')  #TODO(haeusser) use slim
+from inception.imagenet_data import ImagenetData
+from inception import image_processing
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('package', 'svhn', 'Which package/dataset to work on.')
+flags.DEFINE_string('architecture', 'inception_model', 'Which dataset to work on.')
 
-flags.DEFINE_integer('eval_batch_size', 1000, 'Batch size for eval loop.')
+flags.DEFINE_integer('eval_batch_size', 500, 'Batch size for eval loop.')
 
 flags.DEFINE_integer('new_size', 0, 'If > 0, resize image to this width/height.'
                      'Needs to match size used for training.')
@@ -46,7 +50,7 @@ flags.DEFINE_integer('new_size', 0, 'If > 0, resize image to this width/height.'
 flags.DEFINE_integer('eval_interval_secs', 300,
                      'How many seconds between executions of the eval loop.')
 
-flags.DEFINE_string('logdir', '/tmp/semisup',
+flags.DEFINE_string('logdir', '/tmp/semisup/imagenet',
                     'Where the checkpoints are stored '
                     'and eval events will be written to.')
 
@@ -55,45 +59,25 @@ flags.DEFINE_string('master', '',
 
 
 def main(_):
-  # Get dataset-related toolbox.
-  tools = getattr(semisup, FLAGS.package + '_tools')
+  # Load dataset
+  tf.app.flags.FLAGS.data_dir ='/work/haeusser/data/imagenet/shards'
+  dataset = ImagenetData(subset='validation')
+  assert dataset.data_files()
 
-  num_labels = tools.NUM_LABELS
-  image_shape = tools.IMAGE_SHAPE
+  num_labels = dataset.num_classes() + 1
+  image_shape = [FLAGS.image_size, FLAGS.image_size, 3]
 
-  test_images, test_labels = tools.get_data('test')
 
   graph = tf.Graph()
   with graph.as_default():
 
-    # Set up input pipeline.
-    image, label = tf.train.slice_input_producer([test_images, test_labels])
-    images, labels = tf.train.batch(
-        [image, label], batch_size=FLAGS.eval_batch_size)
-    images = tf.cast(images, tf.float32)
-    labels = tf.cast(labels, tf.int64)
-
-    # Reshape if necessary.
-    if FLAGS.new_size > 0:
-      new_shape = [FLAGS.new_size, FLAGS.new_size, 3]
-    else:
-      new_shape = None
-
-    # Create function that defines the network.
-    model_function = partial(
-        tools.default_model,
-        is_training=False,
-        new_shape=new_shape,
-        img_shape=image_shape,
-        augmentation_function=None,
-        image_summary=False)
+    images, labels = image_processing.batch_inputs(
+        dataset, 32, train=True,
+        num_preprocess_threads=16,
+        num_readers=FLAGS.num_readers)
 
     # Set up semisup model.
-    model = semisup.SemisupModel(
-        model_function,
-        num_labels,
-        image_shape,
-        test_in=images)
+    model = semisup.SemisupModel(semisup.architectures.inception_model, num_labels, image_shape, test_in=images)
 
     # Add moving average variables.
     for var in tf.get_collection('moving_vars'):
@@ -112,7 +96,7 @@ def main(_):
       tf.summary.scalar(name, value)
 
     # Run the actual evaluation loop.
-    num_batches = math.ceil(len(test_labels) / float(FLAGS.eval_batch_size))
+    num_batches = math.ceil(dataset.num_examples_per_epoch() / float(FLAGS.eval_batch_size))
     
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
