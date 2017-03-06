@@ -422,7 +422,7 @@ def main(_):
 
             # Resize if necessary.
             if FLAGS.new_size > 0:
-                new_shape = [FLAGS.new_size, FLAGS.new_size, 3]
+                new_shape = [FLAGS.new_size, FLAGS.new_size, image_shape[-1]]
             else:
                 new_shape = None
 

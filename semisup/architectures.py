@@ -194,6 +194,14 @@ def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_no
     """Construct the image-to-embedding vector model."""
 
     inputs = tf.cast(inputs, tf.float32) / 255.0
+    if new_shape is not None:
+        shape = new_shape
+        inputs = tf.image.resize_images(
+            inputs,
+            tf.constant(new_shape[:2]),
+            method=tf.image.ResizeMethod.BILINEAR)
+    else:
+        shape = img_shape
     net = inputs
     with slim.arg_scope(
             [slim.conv2d, slim.fully_connected],
