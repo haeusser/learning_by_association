@@ -1,5 +1,9 @@
 """
 Download USPS dataset from http://statweb.stanford.edu/~tibs/ElemStatLearn/data.html
+
+Explicit links:
+Training: http://statweb.stanford.edu/~tibs/ElemStatLearn/datasets/zip.train.gz
+Test:     http://statweb.stanford.edu/~tibs/ElemStatLearn/datasets/zip.test.gz
 """
 from __future__ import division
 from __future__ import print_function
