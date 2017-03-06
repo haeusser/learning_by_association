@@ -23,7 +23,7 @@ from __future__ import print_function
 
 from functools import partial
 
-import cv2
+#import cv2
 import numpy as np
 import tensorflow as tf
 import semisup
