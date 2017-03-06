@@ -21,7 +21,7 @@ IMAGE_SHAPE = [16, 16, 1]
 
 def get_data(name):
     """Utility for convenient data loading."""
-    if name == 'train':
+    if name in ['train', 'unlabeled']:
         return extract_images_labels(DATADIR + '/zip.train.gz')
     elif name == 'test':
         return extract_images_labels(DATADIR + '/zip.test.gz')
