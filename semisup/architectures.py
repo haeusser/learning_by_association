@@ -245,3 +245,10 @@ def inception_model_small(inputs,
                           **kwargs):
     return partial(inception_model, inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10,
                    end_point='Mixed_5d', **kwargs)
+
+def inception_model_medium(inputs,
+                          emb_size=128,
+                          is_training=True,
+                          **kwargs):
+    return partial(inception_model, inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10,
+                   end_point='Mixed_6e', **kwargs)
