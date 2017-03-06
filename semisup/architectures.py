@@ -26,6 +26,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+from functools import partial
 
 
 def svhn_model(inputs,
@@ -114,7 +115,7 @@ def dann_model(inputs,
             activation_fn=tf.nn.relu,
             weights_regularizer=slim.l2_regularizer(l2_weight)):
         with slim.arg_scope([slim.dropout], is_training=is_training):
-            #TODO(tfrerix) ab hier
+            # TODO(tfrerix) ab hier
             net = slim.conv2d(net, 32, [3, 3], scope='conv1')
             net = slim.conv2d(net, 32, [3, 3], scope='conv1_2')
             net = slim.conv2d(net, 32, [3, 3], scope='conv1_3')
@@ -133,7 +134,6 @@ def dann_model(inputs,
                 emb = slim.fully_connected(net, emb_size, scope='fc1')
 
     return emb
-
 
 
 def stl10_model(inputs,
@@ -190,7 +190,8 @@ def stl10_model(inputs,
     return emb
 
 
-def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_norm_decay=None, img_shape=None, augmentation_function=None, new_shape=None):  # pylint: disable=unused-argument
+def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_norm_decay=None, img_shape=None,
+                augmentation_function=None, new_shape=None):  # pylint: disable=unused-argument
     """Construct the image-to-embedding vector model."""
 
     inputs = tf.cast(inputs, tf.float32) / 255.0
@@ -227,11 +228,20 @@ def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_no
 def inception_model(inputs,
                     emb_size=128,
                     is_training=True,
+                    end_point='Mixed_7c',
                     **kwargs):
     from tensorflow.contrib.slim.python.slim.nets import inception_v3
-    _, end_points = inception_v3.inception_v3(inputs, is_training=is_training, reuse=True)
-    net = end_points['Mixed_7c']
+    _, end_points = inception_v3.inception_v3(inputs, is_training=is_training, reuse=True, **kwargs)
+    net = end_points[end_point]
     net = slim.flatten(net, scope='flatten')
     with slim.arg_scope([slim.fully_connected], normalizer_fn=None):
         emb = slim.fully_connected(net, emb_size, scope='fc')
     return emb
+
+
+def inception_model_small(inputs,
+                          emb_size=128,
+                          is_training=True,
+                          **kwargs):
+    return partial(inception_model, inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10,
+                   end_point='Mixed_5d', **kwargs)
