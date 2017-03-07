@@ -54,6 +54,7 @@ flags.DEFINE_string('logdir', '/tmp/semisup',
 flags.DEFINE_string('master', '',
                     'BNS name of the TensorFlow master to use.')
 
+flags.DEFINE_integer('timeout', 1200, 'The maximum amount of time to wait between checkpoints. If left as `None`, then the process will wait indefinitely.')
 
 def main(_):
     # Get dataset-related toolbox.
@@ -126,7 +127,7 @@ def main(_):
             eval_op=names_to_updates.values(),
             eval_interval_secs=FLAGS.eval_interval_secs,
             session_config=config,
-            timeout=60 * 60
+            timeout=FLAGS.timeout
         )
 
 
