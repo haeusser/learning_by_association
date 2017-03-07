@@ -190,7 +190,8 @@ def stl10_model(inputs,
     return emb
 
 
-def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_norm_decay=None, img_shape=None, augmentation_function=None, new_shape=None, image_summary=None):  # pylint: disable=unused-argument
+def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_norm_decay=None, img_shape=None,
+                augmentation_function=None, new_shape=None):  # pylint: disable=unused-argument
     """Construct the image-to-embedding vector model."""
 
     inputs = tf.cast(inputs, tf.float32) / 255.0
@@ -228,9 +229,26 @@ def inception_model(inputs,
                     emb_size=128,
                     is_training=True,
                     end_point='Mixed_7c',
+                    augmentation_function=None,
+		    img_shape=None,
+                    new_shape=None,
+                    batch_norm_decay=None,
                     **kwargs):
     from tensorflow.contrib.slim.python.slim.nets import inception_v3
-    _, end_points = inception_v3.inception_v3(inputs, is_training=is_training, reuse=True, **kwargs)
+    inputs = tf.cast(inputs, tf.float32) / 255.0
+    if new_shape is not None:
+        shape = new_shape
+        inputs = tf.image.resize_images(
+            inputs,
+            tf.constant(new_shape[:2]),
+            method=tf.image.ResizeMethod.BILINEAR)
+    else:
+        shape = img_shape
+    net = inputs
+    mean = tf.reduce_mean(net, [1, 2], True)
+    std = tf.reduce_mean(tf.square(net - mean), [1, 2], True)
+    net = (net - mean) / (std + 1e-5)
+    _, end_points = inception_v3.inception_v3(net, is_training=is_training, reuse=None, **kwargs)
     net = end_points[end_point]
     net = slim.flatten(net, scope='flatten')
     with slim.arg_scope([slim.fully_connected], normalizer_fn=None):
@@ -242,12 +260,10 @@ def inception_model_small(inputs,
                           emb_size=128,
                           is_training=True,
                           **kwargs):
-    return partial(inception_model, inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10,
-                   end_point='Mixed_5d', **kwargs)
+    return inception_model(inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10, end_point='Mixed_5d', **kwargs)
 
 def inception_model_medium(inputs,
                           emb_size=128,
                           is_training=True,
                           **kwargs):
-    return partial(inception_model, inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10,
-                   end_point='Mixed_6e', **kwargs)
+    return partial(inception_model, num_classes=10, end_point='Mixed_6e')
