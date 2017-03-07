@@ -10,6 +10,10 @@ from . import svhn_tools
 from . import stl10_tools
 from . import synth_tools
 from . import usps_tools
+from . import office_tools
+from . import office_webcam_tools
+from . import office_amazon_tools
+from . import office_dslr_tools
 from . import architectures
 from . import data_dirs
 from .backend import *
