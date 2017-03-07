@@ -190,8 +190,7 @@ def stl10_model(inputs,
     return emb
 
 
-def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_norm_decay=None, img_shape=None,
-                augmentation_function=None, new_shape=None):  # pylint: disable=unused-argument
+def mnist_model(inputs, is_training=True, emb_size=128, l2_weight=1e-3, batch_norm_decay=None, img_shape=None, augmentation_function=None, new_shape=None, image_summary=None):  # pylint: disable=unused-argument
     """Construct the image-to-embedding vector model."""
 
     inputs = tf.cast(inputs, tf.float32) / 255.0
