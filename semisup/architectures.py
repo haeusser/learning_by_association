@@ -24,9 +24,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from functools import partial
+
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from functools import partial
 
 
 def svhn_model(inputs,
@@ -230,11 +231,22 @@ def inception_model(inputs,
                     is_training=True,
                     end_point='Mixed_7c',
                     augmentation_function=None,
-		    img_shape=None,
+                    img_shape=None,
                     new_shape=None,
                     batch_norm_decay=None,
+                    dropout_keep_prob=0.8,
+                    min_depth=16,
+                    depth_multiplier=1.0,
+                    spatial_squeeze=True,
+                    reuse=None,
+                    scope='InceptionV3',
+                    num_classes=10,
                     **kwargs):
-    from tensorflow.contrib.slim.python.slim.nets import inception_v3
+    from tensorflow.contrib.slim.python.slim.nets.inception_v3 import inception_v3_base
+    from tensorflow.python.ops import variable_scope
+    from tensorflow.contrib.framework.python.ops import arg_scope
+    from tensorflow.contrib.layers.python.layers import layers as layers_lib
+
     inputs = tf.cast(inputs, tf.float32) / 255.0
     if new_shape is not None:
         shape = new_shape
@@ -244,11 +256,28 @@ def inception_model(inputs,
             method=tf.image.ResizeMethod.BILINEAR)
     else:
         shape = img_shape
+
     net = inputs
     mean = tf.reduce_mean(net, [1, 2], True)
     std = tf.reduce_mean(tf.square(net - mean), [1, 2], True)
     net = (net - mean) / (std + 1e-5)
-    _, end_points = inception_v3.inception_v3(net, is_training=is_training, reuse=None, **kwargs)
+
+    inputs = net
+
+    if depth_multiplier <= 0:
+        raise ValueError('depth_multiplier is not greater than zero.')
+
+    with variable_scope.variable_scope(
+            scope, 'InceptionV3', [inputs, num_classes], reuse=reuse) as scope:
+        with arg_scope(
+                [layers_lib.batch_norm, layers_lib.dropout], is_training=is_training):
+            _, end_points = inception_v3_base(
+                inputs,
+                scope=scope,
+                min_depth=min_depth,
+                depth_multiplier=depth_multiplier,
+                final_endpoint=end_point)
+
     net = end_points[end_point]
     net = slim.flatten(net, scope='flatten')
     with slim.arg_scope([slim.fully_connected], normalizer_fn=None):
@@ -260,10 +289,6 @@ def inception_model_small(inputs,
                           emb_size=128,
                           is_training=True,
                           **kwargs):
-    return inception_model(inputs=inputs, emb_size=emb_size, is_training=is_training, num_classes=10, end_point='Mixed_5d', **kwargs)
+    return inception_model(inputs=inputs, emb_size=emb_size, is_training=is_training,
+                           end_point='Mixed_5d', **kwargs)
 
-def inception_model_medium(inputs,
-                          emb_size=128,
-                          is_training=True,
-                          **kwargs):
-    return partial(inception_model, num_classes=10, end_point='Mixed_6e')
