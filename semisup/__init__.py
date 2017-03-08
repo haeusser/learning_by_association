@@ -5,6 +5,7 @@ from __future__ import print_function
 # pylint: disable=unused-import,line-too-long,g-importing-member,wildcard-import
 
 from . import mnist_tools
+from . import mnistm_tools
 from . import gtsrb_tools
 from . import svhn_tools
 from . import stl10_tools
