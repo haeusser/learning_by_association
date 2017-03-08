@@ -23,15 +23,13 @@ from __future__ import print_function
 
 from functools import partial
 
-#import cv2
 import numpy as np
-import tensorflow as tf
 import semisup
+import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
 from tensorflow.python.training import saver as tf_saver
-
 
 FLAGS = flags.FLAGS
 
@@ -352,18 +350,19 @@ def piecewise_constant(x, boundaries, values, name=None):
         return tf.case(pred_fn_pairs, default, exclusive=True)
 
 
-def apply_envelope(type, step, final_weight, final_steps, delay):
-    step = tf.cast(step-delay, tf.float32)
-    final_steps += delay
+def apply_envelope(type, step, final_weight, growing_steps, delay):
+    assert growing_steps > 0, "Growing steps for envelope must be > 0."
+    step = tf.cast(step - delay, tf.float32)
+    final_step = growing_steps + delay
 
     if type is None:
         value = final_weight
 
     elif type in ['sigmoid', 'sigmoidal', 'logistic', 'log']:
-        value = logistic_growth(step, final_weight, final_steps)
+        value = logistic_growth(step, final_weight, final_step)
 
     elif type in ['linear', 'lin']:
-        m = float(final_weight) / final_steps
+        m = float(final_weight) / (growing_steps) if not growing_steps == 0.0 else 999.
         value = m * step
 
     else:
@@ -472,10 +471,11 @@ def main(_):
             visit_weight_envelope_delay = FLAGS.walker_weight_envelope_delay if FLAGS.visit_weight_envelope_delay == -1 else FLAGS.visit_weight_envelope_delay
             visit_weight = apply_envelope(type=FLAGS.visit_weight_envelope, step=model.step,
                                           final_weight=FLAGS.visit_weight,
-                                          final_steps=visit_weight_envelope_steps, delay=visit_weight_envelope_delay)
+                                          steps=visit_weight_envelope_steps, delay=visit_weight_envelope_delay)
             walker_weight = apply_envelope(type=FLAGS.walker_weight_envelope, step=model.step,
                                            final_weight=FLAGS.walker_weight,
-                                           final_steps=FLAGS.walker_weight_envelope_steps, delay=FLAGS.walker_weight_envelope_delay)
+                                           steps=FLAGS.walker_weight_envelope_steps,
+                                           delay=FLAGS.walker_weight_envelope_delay)
             tf.summary.scalar('Weights_Visit', visit_weight)
             tf.summary.scalar('Weights_Walker', walker_weight)
 
