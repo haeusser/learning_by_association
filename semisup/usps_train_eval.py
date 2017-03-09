@@ -1,11 +1,11 @@
-
+#! /usr/bin/env python
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
 import semisup
-from semisup.usps_tools import NUM_LABELS, IMAGE_SHAPE, get_data
+from tools.usps import NUM_LABELS, IMAGE_SHAPE, get_data
 
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags

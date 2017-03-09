@@ -22,6 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 from functools import partial
+from importlib import import_module
 
 import numpy as np
 import semisup
@@ -373,7 +374,7 @@ def apply_envelope(type, step, final_weight, growing_steps, delay):
 
 def main(_):
     # Load data.
-    dataset_tools = getattr(semisup, FLAGS.dataset + '_tools')
+    dataset_tools = import_module('tools.' + FLAGS.dataset)
     train_images, train_labels = dataset_tools.get_data('train')
     if FLAGS.target_dataset is not None:
         target_dataset_tools = getattr(semisup, FLAGS.target_dataset + '_tools')

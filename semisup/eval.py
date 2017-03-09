@@ -26,9 +26,10 @@ from __future__ import print_function
 
 import math
 from functools import partial
+from importlib import import_module
 
-import tensorflow as tf
 import semisup
+import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
@@ -58,7 +59,7 @@ flags.DEFINE_integer('timeout', 1200, 'The maximum amount of time to wait betwee
 
 def main(_):
     # Get dataset-related toolbox.
-    dataset_tools = getattr(semisup, FLAGS.dataset + '_tools')
+    dataset_tools = import_module('tools.' + FLAGS.dataset)
     architecture = getattr(semisup.architectures, FLAGS.architecture)
 
     num_labels = dataset_tools.NUM_LABELS
