@@ -61,15 +61,15 @@ flags.DEFINE_integer('max_steps', 20000, 'Number of training steps.')
 flags.DEFINE_string('logdir', '/tmp/semisup', 'Training log path.')
 
 
-mnist_tools = tools.synth
+from tools import synth as synth_tools
 
-NUM_LABELS = mnist_tools.NUM_LABELS
-IMAGE_SHAPE = mnist_tools.IMAGE_SHAPE
+NUM_LABELS = synth_tools.NUM_LABELS
+IMAGE_SHAPE = synth_tools.IMAGE_SHAPE
 
 
 def main(_):
-  train_images, train_labels = mnist_tools.get_data('train')
-  test_images, test_labels = mnist_tools.get_data('test')
+  train_images, train_labels = synth_tools.get_data('train')
+  test_images, test_labels = synth_tools.get_data('test')
 
   # Sample labeled training subset.
   seed = FLAGS.sup_seed if FLAGS.sup_seed != -1 else None
@@ -78,7 +78,7 @@ def main(_):
 
   graph = tf.Graph()
   with graph.as_default():
-    model = semisup.SemisupModel(mnist_tools.default_model, NUM_LABELS,
+    model = semisup.SemisupModel(synth_tools.default_model, NUM_LABELS,
                                  IMAGE_SHAPE)
 
     # Set up inputs.

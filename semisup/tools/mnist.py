@@ -38,7 +38,7 @@ IMAGE_SHAPE = [28, 28, 1]
 def get_data(name):
   """Utility for convenient data loading."""
 
-  if name == 'train':
+  if name == 'train' or name == 'unlabeled':
     return extract_images(DATADIR +
                           '/train-images-idx3-ubyte.gz'), extract_labels(
                               DATADIR + '/train-labels-idx1-ubyte.gz')

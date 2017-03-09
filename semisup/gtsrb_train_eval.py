@@ -38,7 +38,7 @@ flags.DEFINE_integer('max_steps', 20000, 'Number of training steps.')
 
 flags.DEFINE_string('logdir', '/tmp/semisup_gtsrb', 'Training log path.')
 
-gtsrb_tools = tools.gtsrb
+from tools import gtsrb as gtsrb_tools
 
 NUM_LABELS = gtsrb_tools.NUM_LABELS
 IMAGE_SHAPE = gtsrb_tools.IMAGE_SHAPE

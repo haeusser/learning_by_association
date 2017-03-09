@@ -61,7 +61,7 @@ flags.DEFINE_integer('max_steps', 20000, 'Number of training steps.')
 
 flags.DEFINE_string('logdir', '/tmp/semisup_mnist', 'Training log path.')
 
-mnist_tools = tools.mnist
+from tools import mnist as mnist_tools
 
 NUM_LABELS = mnist_tools.NUM_LABELS
 IMAGE_SHAPE = mnist_tools.IMAGE_SHAPE
