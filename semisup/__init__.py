@@ -5,5 +5,4 @@ from __future__ import print_function
 # pylint: disable=unused-import,line-too-long,g-importing-member,wildcard-import
 
 from . import architectures
-from . import data_dirs
 from .backend import *
