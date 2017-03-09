@@ -24,8 +24,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from functools import partial
-
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
@@ -292,3 +290,55 @@ def inception_model_small(inputs,
     return inception_model(inputs=inputs, emb_size=emb_size, is_training=is_training,
                            end_point='Mixed_5d', **kwargs)
 
+
+def vgg16_model(inputs, emb_size=128, is_training=True, img_shape=None, new_shape=None, dropout_keep_prob=0.5, l2_weight=0.0005,
+                end_point=None, **kwargs):
+
+
+
+    inputs = tf.cast(inputs, tf.float32)
+    if new_shape is not None:
+        shape = new_shape
+        inputs = tf.image.resize_images(
+            inputs,
+            tf.constant(new_shape[:2]),
+            method=tf.image.ResizeMethod.BILINEAR)
+    else:
+        shape = img_shape
+
+    net = inputs
+    mean = tf.reduce_mean(net, [1, 2], True)
+    std = tf.reduce_mean(tf.square(net - mean), [1, 2], True)
+    net = (net - mean) / (std + 1e-5)
+    with slim.arg_scope(
+            [slim.conv2d, slim.fully_connected],
+            weights_regularizer=slim.l2_regularizer(l2_weight)):
+        with slim.arg_scope([slim.dropout], is_training=is_training):
+            net = slim.repeat(net, 2, slim.conv2d, 64, [3, 3], scope='conv1')  # 100
+            net = slim.max_pool2d(net, [2, 2], scope='pool1')  # 50
+            net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv2')
+            net = slim.max_pool2d(net, [2, 2], scope='pool2')  # 25
+            net = slim.repeat(net, 3, slim.conv2d, 256, [3, 3], scope='conv3')
+            net = slim.max_pool2d(net, [2, 2], scope='pool3')  # 12
+            net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv4')
+            net = slim.max_pool2d(net, [2, 2], scope='pool4')  # 6
+            net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')
+            net = slim.max_pool2d(net, [2, 2], scope='pool5')  # 3
+            net = slim.flatten(net, scope='flatten')
+
+            with slim.arg_scope([slim.fully_connected], normalizer_fn=None):
+                net = slim.fully_connected(net, 4096, [7, 7], activation_fn=tf.nn.relu, scope='fc6')
+                if end_point == 'fc6':
+                    return net
+                net = slim.dropout(net, dropout_keep_prob, is_training=is_training,
+                                   scope='dropout6')
+                emb = slim.fully_connected(net, emb_size, [1, 1], activation_fn=None, scope='fc7')
+
+    return emb
+
+
+
+def vgg16_model_small(inputs, emb_size=128, is_training=True, img_shape=None, new_shape=None, dropout_keep_prob=0.5,
+                      **kwargs):
+    return vgg16_model(inputs, emb_size, is_training, img_shape, new_shape, dropout_keep_prob, end_point='fc6',
+                       **kwargs)
