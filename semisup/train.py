@@ -471,10 +471,10 @@ def main(_):
             visit_weight_envelope_delay = FLAGS.walker_weight_envelope_delay if FLAGS.visit_weight_envelope_delay == -1 else FLAGS.visit_weight_envelope_delay
             visit_weight = apply_envelope(type=FLAGS.visit_weight_envelope, step=model.step,
                                           final_weight=FLAGS.visit_weight,
-                                          steps=visit_weight_envelope_steps, delay=visit_weight_envelope_delay)
+                                          growing_steps=visit_weight_envelope_steps, delay=visit_weight_envelope_delay)
             walker_weight = apply_envelope(type=FLAGS.walker_weight_envelope, step=model.step,
                                            final_weight=FLAGS.walker_weight,
-                                           steps=FLAGS.walker_weight_envelope_steps,
+                                           growing_steps=FLAGS.walker_weight_envelope_steps,
                                            delay=FLAGS.walker_weight_envelope_delay)
             tf.summary.scalar('Weights_Visit', visit_weight)
             tf.summary.scalar('Weights_Walker', walker_weight)
