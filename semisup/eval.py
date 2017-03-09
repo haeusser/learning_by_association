@@ -110,6 +110,7 @@ def main(_):
         # Accuracy metric for summaries.
         names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
             'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
+            'Test_Error': 100. * (1. - slim.metrics.streaming_accuracy(predictions, labels)),
         })
         for name, value in names_to_values.iteritems():
             tf.summary.scalar(name, value)
