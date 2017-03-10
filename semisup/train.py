@@ -377,7 +377,7 @@ def main(_):
     dataset_tools = import_module('tools.' + FLAGS.dataset)
     train_images, train_labels = dataset_tools.get_data('train')
     if FLAGS.target_dataset is not None:
-        target_dataset_tools = getattr(semisup, FLAGS.target_dataset + '_tools')
+        target_dataset_tools = import_module('tools.' + FLAGS.target_dataset)
         train_images_unlabeled, _ = target_dataset_tools.get_data(FLAGS.target_dataset_split)
     else:
         train_images_unlabeled, _ = dataset_tools.get_data('unlabeled')
