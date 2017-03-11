@@ -2,7 +2,7 @@ from __future__ import division
 from __future__ import print_function
 
 import data_dirs
-from office_tools import read_office_data
+from office import read_office_data
 
 DATADIR = data_dirs.office
 
