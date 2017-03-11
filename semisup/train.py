@@ -428,11 +428,26 @@ def main(_):
 
             # Apply augmentation
             if FLAGS.augmentation:
-                if hasattr(dataset_tools, 'augmentation_params'):
-                    augmentation_function = partial(
-                        apply_augmentation, params=dataset_tools.augmentation_params)
-                else:
-                    augmentation_function = apply_affine_augmentation
+                # TODO(haeusser) revert this to the general case
+                def _random_invert(inputs, _):
+                    randu = tf.random_uniform(shape=[FLAGS.sup_per_batch * num_labels], minval=0., maxval=1.,
+                                              dtype=tf.float32)
+                    randu = tf.cast(tf.less(randu, 0.5), tf.float32)
+                    randu = tf.expand_dims(randu, 1)
+                    randu = tf.expand_dims(randu, 1)
+                    randu = tf.expand_dims(randu, 1)
+                    inputs = tf.cast(inputs, tf.float32)
+                    return tf.abs(inputs - 255 * randu)
+
+                augmentation_function = _random_invert
+
+
+
+                #if hasattr(dataset_tools, 'augmentation_params'):
+                #    augmentation_function = partial(
+                #        apply_augmentation, params=dataset_tools.augmentation_params)
+                #else:
+                #    augmentation_function = apply_affine_augmentation
             else:
                 augmentation_function = None
 
