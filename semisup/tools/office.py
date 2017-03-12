@@ -6,18 +6,20 @@ import numpy as np
 from PIL import Image
 import random
 
+NUM_LABELS = 31
+IMAGE_SIZE = (96, 96)
+
 def read_office_data(fileroot, partition):
     # take a randomly shuffled train/test split, but always the same
     random.seed(314)
     train_fraction = 0.7
 
     dirs = [f for f in os.listdir(fileroot) if not f.startswith('.')]
-    current_label = 0
+    dirs.sort()
     images = []
     labels = []
-    for dir in dirs:
-        label = current_label
-        filenames = os.listdir(os.path.join(fileroot, dir))
+    for label, path in enumerate(dirs):
+        filenames = os.listdir(os.path.join(fileroot, path))
         random.shuffle(filenames)
         num_samples = len(filenames)
         split = int(train_fraction * num_samples)
@@ -27,12 +29,11 @@ def read_office_data(fileroot, partition):
             taken_samples = filenames[split:]
 
         for filename in taken_samples:
-            filepath = os.path.join(fileroot, dir, filename)
+            filepath = os.path.join(fileroot, path, filename)
             raw_img = Image.open(filepath)
-            raw_img_resized = raw_img.resize((128, 128))
+            raw_img_resized = raw_img.resize(IMAGE_SIZE)
             img = np.asarray(raw_img_resized)
             images.append(img)
             labels.append(label)
-        current_label += 1
 
     return np.asarray(images), np.asarray(labels)
