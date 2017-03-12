@@ -197,7 +197,7 @@ def mnist_model(inputs,
                 img_shape=None,
                 new_shape=None,
                 augmentation_function=None,
-                image_summary = False):  # pylint: disable=unused-argument
+                image_summary=False):  # pylint: disable=unused-argument
 
     """Construct the image-to-embedding vector model."""
 
@@ -299,11 +299,9 @@ def inception_model_small(inputs,
                            end_point='Mixed_5d', **kwargs)
 
 
-def vgg16_model(inputs, emb_size=128, is_training=True, img_shape=None, new_shape=None, dropout_keep_prob=0.5, l2_weight=0.0005,
+def vgg16_model(inputs, emb_size=128, is_training=True, img_shape=None, new_shape=None, dropout_keep_prob=0.5,
+                l2_weight=0.0005,
                 end_point=None, **kwargs):
-
-
-
     inputs = tf.cast(inputs, tf.float32)
     if new_shape is not None:
         shape = new_shape
@@ -345,8 +343,99 @@ def vgg16_model(inputs, emb_size=128, is_training=True, img_shape=None, new_shap
     return emb
 
 
-
 def vgg16_model_small(inputs, emb_size=128, is_training=True, img_shape=None, new_shape=None, dropout_keep_prob=0.5,
                       **kwargs):
     return vgg16_model(inputs, emb_size, is_training, img_shape, new_shape, dropout_keep_prob, end_point='fc6',
                        **kwargs)
+
+
+def alexnet_model(inputs,
+                  is_training=True,
+                  augmentation_function=None,
+                  emb_size=128,
+                  l2_weight=1e-4,
+                  img_shape=None,
+                  new_shape=None,
+                  image_summary=False,
+                  batch_norm_decay=0.99):
+    """Mostly identical to slim.nets.alexnt, except for the reverted fc layers"""
+
+    from tensorflow.contrib import layers
+    from tensorflow.contrib.framework.python.ops import arg_scope
+    from tensorflow.contrib.layers.python.layers import layers as layers_lib
+    from tensorflow.contrib.layers.python.layers import regularizers
+    from tensorflow.python.ops import init_ops
+    from tensorflow.python.ops import nn_ops
+    from tensorflow.python.ops import variable_scope
+
+    trunc_normal = lambda stddev: init_ops.truncated_normal_initializer(0.0, stddev)
+
+    def alexnet_v2_arg_scope(weight_decay=0.0005):
+        with arg_scope(
+                [layers.conv2d, layers_lib.fully_connected],
+                activation_fn=nn_ops.relu,
+                biases_initializer=init_ops.constant_initializer(0.1),
+                weights_regularizer=regularizers.l2_regularizer(weight_decay)):
+            with arg_scope([layers.conv2d], padding='SAME'):
+                with arg_scope([layers_lib.max_pool2d], padding='VALID') as arg_sc:
+                    return arg_sc
+
+    def alexnet_v2(inputs,
+                   is_training=True,
+                   emb_size=4096,
+                   dropout_keep_prob=0.5,
+                   scope='alexnet_v2'):
+
+        inputs = tf.cast(inputs, tf.float32)
+        if new_shape is not None:
+            shape = new_shape
+            inputs = tf.image.resize_images(
+                inputs,
+                tf.constant(new_shape[:2]),
+                method=tf.image.ResizeMethod.BILINEAR)
+        else:
+            shape = img_shape
+        if is_training and augmentation_function is not None:
+            inputs = augmentation_function(inputs, shape)
+        if image_summary:
+            tf.summary.image('Inputs', inputs, max_outputs=3)
+
+        net = inputs
+        mean = tf.reduce_mean(net, [1, 2], True)
+        std = tf.reduce_mean(tf.square(net - mean), [1, 2], True)
+        net = (net - mean) / (std + 1e-5)
+        inputs = net
+
+        with variable_scope.variable_scope(scope, 'alexnet_v2', [inputs]) as sc:
+            end_points_collection = sc.original_name_scope + '_end_points'
+
+            # Collect outputs for conv2d, fully_connected and max_pool2d.
+            with arg_scope(
+                    [layers.conv2d, layers_lib.fully_connected, layers_lib.max_pool2d],
+                    outputs_collections=[end_points_collection]):
+                net = layers.conv2d(
+                    inputs, 64, [11, 11], 4, padding='VALID', scope='conv1')
+                net = layers_lib.max_pool2d(net, [3, 3], 2, scope='pool1')
+                net = layers.conv2d(net, 192, [5, 5], scope='conv2')
+                net = layers_lib.max_pool2d(net, [3, 3], 2, scope='pool2')
+                net = layers.conv2d(net, 384, [3, 3], scope='conv3')
+                net = layers.conv2d(net, 384, [3, 3], scope='conv4')
+                net = layers.conv2d(net, 256, [3, 3], scope='conv5')
+                net = layers_lib.max_pool2d(net, [3, 3], 2, scope='pool5')
+
+                net = slim.flatten(net, scope='flatten')
+
+                # Use conv2d instead of fully_connected layers.
+                with arg_scope(
+                        [slim.fully_connected],
+                        weights_initializer=trunc_normal(0.005),
+                        biases_initializer=init_ops.constant_initializer(0.1)):
+                    net = layers.fully_connected(net, 4096, scope='fc6')
+                    net = layers_lib.dropout(
+                        net, dropout_keep_prob, is_training=is_training, scope='dropout6')
+                    net = layers.fully_connected(net, emb_size, scope='fc7')
+
+        return net
+
+    with slim.arg_scope(alexnet_v2_arg_scope()):
+        return alexnet_v2(inputs, is_training, emb_size)
