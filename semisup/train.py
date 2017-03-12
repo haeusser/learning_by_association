@@ -60,6 +60,9 @@ flags.DEFINE_integer('sup_per_batch', 10,
 flags.DEFINE_integer('unsup_batch_size', 100,
                      'Number of unlabeled samples per batch.')
 
+flags.DEFINE_integer('emb_size', 128,
+                     'Size of the embeddings to learn.')
+
 flags.DEFINE_float('learning_rate', 1e-4, 'Initial learning rate.')
 
 flags.DEFINE_float('minimum_learning_rate', 1e-6,
@@ -457,7 +460,8 @@ def main(_):
                 new_shape=new_shape,
                 img_shape=image_shape,
                 augmentation_function=augmentation_function,
-                batch_norm_decay=FLAGS.batch_norm_decay)
+                batch_norm_decay=FLAGS.batch_norm_decay,
+                emb_size=FLAGS.emb_size)
 
             # Set up semisup model.
             model = semisup.SemisupModel(model_function, num_labels, image_shape)
@@ -469,7 +473,7 @@ def main(_):
             # Add virtual embeddings.
             if FLAGS.virtual_embeddings:
                 t_sup_emb = tf.concat(0, [
-                    t_sup_emb, semisup.create_virt_emb(FLAGS.virtual_embeddings, 128)
+                    t_sup_emb, semisup.create_virt_emb(FLAGS.virtual_embeddings, FLAGS.emb_size)
                 ])
 
                 if not FLAGS.remove_classes:

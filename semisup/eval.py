@@ -45,6 +45,9 @@ flags.DEFINE_integer('eval_batch_size', 500, 'Batch size for eval loop.')
 flags.DEFINE_integer('new_size', 0, 'If > 0, resize image to this width/height.'
                                     'Needs to match size used for training.')
 
+flags.DEFINE_integer('emb_size', 128,
+                     'Size of the embeddings to learn.')
+
 flags.DEFINE_integer('eval_interval_secs', 300,
                      'How many seconds between executions of the eval loop.')
 
@@ -90,7 +93,9 @@ def main(_):
             new_shape=new_shape,
             img_shape=image_shape,
             augmentation_function=None,
-            image_summary=False)
+            image_summary=False,
+            emb_size=FLAGS.emb_size)
+
 
         # Set up semisup model.
         model = semisup.SemisupModel(
