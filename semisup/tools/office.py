@@ -31,7 +31,7 @@ def read_office_data(fileroot, partition):
         for filename in taken_samples:
             filepath = os.path.join(fileroot, path, filename)
             raw_img = Image.open(filepath)
-            raw_img_resized = raw_img.resize(IMAGE_SIZE)
+            raw_img_resized = raw_img.resize(IMAGE_SIZE, Image.BILINEAR)
             img = np.asarray(raw_img_resized)
             images.append(img)
             labels.append(label)
