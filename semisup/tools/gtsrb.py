@@ -32,7 +32,11 @@ def read_gtsrb_pickle(filename):
     """
     with open(filename, mode='rb') as f:
         data = pickle.load(f)
-    return data['images'], data['labels']
+    if not type(data['labels'][0]) == int:
+        labels = [int(x) for x in data['labels']]
+    else:
+        labels = data['labels']
+    return np.array(data['images']), np.array(labels)
 
 
 def preprocess_gtsrb(images, roi_boxes, resize_to):
