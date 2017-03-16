@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 from functools import partial
 from importlib import import_module
 
@@ -142,6 +143,8 @@ flags.DEFINE_integer('ps_tasks', 0,
 flags.DEFINE_integer('task', 0,
                      'The Task ID. This value is used when training with multiple workers to '
                      'identify each worker.')
+flags.DEFINE_bool('mmd', False,
+                  'Use MMD loss instead of walker + visit loss.')
 
 # TODO(haeusser) convert to argparse as gflags will be discontinued
 # flags.DEFINE_multi_float('custom_lr_vals', None,
@@ -446,10 +449,10 @@ def main(_):
 
 
 
-                #if hasattr(dataset_tools, 'augmentation_params'):
+                # if hasattr(dataset_tools, 'augmentation_params'):
                 #    augmentation_function = partial(
                 #        apply_augmentation, params=dataset_tools.augmentation_params)
-                #else:
+                # else:
                 #    augmentation_function = apply_affine_augmentation
             else:
                 augmentation_function = None
@@ -487,21 +490,35 @@ def main(_):
             t_sup_logit = model.embedding_to_logit(t_sup_emb)
 
             # Add losses.
-            visit_weight_envelope_steps = FLAGS.walker_weight_envelope_steps if FLAGS.visit_weight_envelope_steps == -1 else FLAGS.visit_weight_envelope_steps
-            visit_weight_envelope_delay = FLAGS.walker_weight_envelope_delay if FLAGS.visit_weight_envelope_delay == -1 else FLAGS.visit_weight_envelope_delay
-            visit_weight = apply_envelope(type=FLAGS.visit_weight_envelope, step=model.step,
-                                          final_weight=FLAGS.visit_weight,
-                                          growing_steps=visit_weight_envelope_steps, delay=visit_weight_envelope_delay)
-            walker_weight = apply_envelope(type=FLAGS.walker_weight_envelope, step=model.step,
-                                           final_weight=FLAGS.walker_weight,
-                                           growing_steps=FLAGS.walker_weight_envelope_steps,
-                                           delay=FLAGS.walker_weight_envelope_delay)
-            tf.summary.scalar('Weights_Visit', visit_weight)
-            tf.summary.scalar('Weights_Walker', walker_weight)
+            if FLAGS.mmd:
+                sys.path.insert(0, '/usr/wiss/haeusser/libs/opt-mmd/gan')
+                from mmd import mix_rbf_mmd2
 
-            if FLAGS.unsup_samples != 0:
-                model.add_semisup_loss(
-                    t_sup_emb, t_unsup_emb, t_sup_labels, visit_weight=visit_weight, walker_weight=walker_weight)
+                bandwidths = [2.0, 5.0, 10.0, 20.0, 40.0, 80.0]  # original
+
+
+                t_sup_flat = tf.reshape(t_sup_emb, [FLAGS.sup_per_batch * num_labels, -1])
+                t_unsup_flat = tf.reshape(t_unsup_emb, [FLAGS.unsup_batch_size, -1])
+                mmd_loss = mix_rbf_mmd2(t_sup_flat, t_unsup_flat, sigmas=bandwidths)
+                tf.losses.add_loss(mmd_loss)
+                tf.summary.scalar('MMD_loss', mmd_loss)
+            else:
+                visit_weight_envelope_steps = FLAGS.walker_weight_envelope_steps if FLAGS.visit_weight_envelope_steps == -1 else FLAGS.visit_weight_envelope_steps
+                visit_weight_envelope_delay = FLAGS.walker_weight_envelope_delay if FLAGS.visit_weight_envelope_delay == -1 else FLAGS.visit_weight_envelope_delay
+                visit_weight = apply_envelope(type=FLAGS.visit_weight_envelope, step=model.step,
+                                              final_weight=FLAGS.visit_weight,
+                                              growing_steps=visit_weight_envelope_steps,
+                                              delay=visit_weight_envelope_delay)
+                walker_weight = apply_envelope(type=FLAGS.walker_weight_envelope, step=model.step,
+                                               final_weight=FLAGS.walker_weight,
+                                               growing_steps=FLAGS.walker_weight_envelope_steps,
+                                               delay=FLAGS.walker_weight_envelope_delay)
+                tf.summary.scalar('Weights_Visit', visit_weight)
+                tf.summary.scalar('Weights_Walker', walker_weight)
+
+                if FLAGS.unsup_samples != 0:
+                    model.add_semisup_loss(
+                        t_sup_emb, t_unsup_emb, t_sup_labels, visit_weight=visit_weight, walker_weight=walker_weight)
 
             model.add_logit_loss(t_sup_logit, t_sup_labels, weight=FLAGS.logit_weight)
 
@@ -533,8 +550,30 @@ def main(_):
             saver = tf_saver.Saver(max_to_keep=FLAGS.max_checkpoints,
                                    keep_checkpoint_every_n_hours=FLAGS.keep_checkpoint_every_n_hours)
 
+            ''' BEGIN EVIL STUFF !!!
+            checkpoint_path = '/usr/wiss/haeusser/experiments/inception_v4/model.ckpt'
+            mapping = dict()
+            for x in slim.get_model_variables():
+                name = x.name[:-2]
+                ok = True
+                for banned in ['Logits', 'fc1', 'fully_connected', 'ExponentialMovingAverage']:
+                    if banned in name:
+                        ok = False
+                if ok:
+                    mapping[name[4:]] = x
+
+            init_assign_op, init_feed_dict = slim.assign_from_checkpoint(
+                checkpoint_path, mapping)
+
+            # Create an initial assignment function.
+            def InitAssignFn(sess):
+                sess.run(init_assign_op, init_feed_dict)
+                print("#################################### Checkpoint loaded.")
+             '''  # END EVIL STUFF !!!
+
             slim.learning.train(
                 train_op,
+                # init_fn=InitAssignFn,  # EVIL, too
                 logdir=FLAGS.logdir + '/train',
                 save_summaries_secs=FLAGS.save_summaries_secs,
                 save_interval_secs=FLAGS.save_interval_secs,
