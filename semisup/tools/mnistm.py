@@ -25,13 +25,16 @@ def load_mnistm(fileroot, partition):
         data = pickle.load(f)
 
     if partition == 'train':
-        images = np.concatenate((data['train_images'], data['valid_images']), axis=0)
-        labels = np.concatenate((data['train_labels'], data['valid_labels']), axis=0)
+        images = np.concatenate((data['train_images'],
+                                 data['valid_images']), axis=0)
+        labels = np.concatenate((data['train_labels'],
+                                 data['valid_labels']), axis=0)
     elif partition == 'test':
         images = data['test_images']
         labels = data['test_labels']
     else:
-        raise ValueError('The provided data partition name is not valid. Use "train" or "test".')
+        raise ValueError('The provided data partition name is not valid. '
+                         'Use "train" or "test".')
 
     return images, labels
 

@@ -1,9 +1,6 @@
 import tarfile
-import os
 import cPickle as pkl
 import numpy as np
-import skimage
-import skimage.io
 import skimage.transform
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -37,8 +34,8 @@ def compose_image(digit, background):
     dw, dh, _ = digit.shape
     x = np.random.randint(0, w - dw)
     y = np.random.randint(0, h - dh)
-    
-    bg = background[x:x+dw, y:y+dh]
+
+    bg = background[x:x + dw, y:y + dh]
     return np.abs(bg - digit).astype(np.uint8)
 
 
@@ -80,5 +77,9 @@ valid = create_mnistm(mnist.validation.images)
 # Save dataset as pickle
 print 'Saving data dictionary as pickle file...'
 with open('mnistm_data.pkl', 'w') as f:
-    pkl.dump({ 'train_images': train, 'test_images': test, 'valid_images': valid, 'train_labels': mnist.train.labels, 'test_labels': mnist.test.labels, 'valid_labels': mnist.validation.labels }, f, -1)
-
+    pkl.dump({'train_images': train,
+              'test_images': test,
+              'valid_images': valid,
+              'train_labels': mnist.train.labels,
+              'test_labels': mnist.test.labels,
+              'valid_labels': mnist.validation.labels}, f, -1)

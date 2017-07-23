@@ -67,5 +67,7 @@ def preprocess_and_convert_synth_signs_to_pickle(rootpath):
     train_labels = labels[:split]
     test_labels = labels[split:]
 
-    pickle.dump({'images': train_img, 'labels': train_labels}, open('synth_signs_train.p', "wb"))
-    pickle.dump({'images': test_img, 'labels': test_labels}, open('synth_signs_test.p', "wb"))
+    pickle.dump({'images': train_img, 'labels': train_labels},
+                open('synth_signs_train.p', "wb"))
+    pickle.dump({'images': test_img, 'labels': test_labels},
+                open('synth_signs_test.p', "wb"))

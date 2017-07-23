@@ -43,10 +43,8 @@ def get_data(name):
   """
 
   if name == 'train' or name == 'unlabeled':
-    #  data = scipy.io.loadmat(gfile.Open(DATADIR + 'train_32x32.mat'))
     data = scipy.io.loadmat(DATADIR + 'train_32x32.mat')
   elif name == 'test':
-    #  data = scipy.io.loadmat(gfile.Open(DATADIR + 'test_32x32.mat'))
     data = scipy.io.loadmat(DATADIR + 'test_32x32.mat')
 
   images = np.rollaxis(data['X'], -1)

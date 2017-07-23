@@ -58,7 +58,10 @@ flags.DEFINE_string('logdir', '/tmp/semisup',
 flags.DEFINE_string('master', '',
                     'BNS name of the TensorFlow master to use.')
 
-flags.DEFINE_integer('timeout', 1200, 'The maximum amount of time to wait between checkpoints. If left as `None`, then the process will wait indefinitely.')
+flags.DEFINE_integer('timeout', 1200,
+                     'The maximum amount of time to wait between checkpoints. '
+                     'If left as `None`, then the process will wait '
+                     'indefinitely.')
 
 def main(_):
     # Get dataset-related toolbox.
@@ -116,7 +119,6 @@ def main(_):
         # Accuracy metric for summaries.
         names_to_values, names_to_updates = slim.metrics.aggregate_metric_map({
             'Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
-            #'Test_Error': 100. * (1. - slim.metrics.streaming_accuracy(predictions, labels)),
         })
         for name, value in names_to_values.iteritems():
             tf.summary.scalar(name, value)
