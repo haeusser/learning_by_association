@@ -1,7 +1,7 @@
 import tarfile
 import cPickle as pkl
 import numpy as np
-import skimage.transform
+import skimage.io
 from tensorflow.examples.tutorials.mnist import input_data
 
 print 'Retrieving MNIST data...'
