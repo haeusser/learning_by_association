@@ -5,7 +5,7 @@ It is implemented with TensorFlow. Please refer to the [TensorFlow documentation
 The core functions are implemented in `semisup/backend.py`.
 The files `train.py` and `eval.py` demonstrate how to use them. A quick example is contained in `mnist_train_eval.py`.
 
-In order to reproduce the results from the paper, please use the architectures and pipelines from the `{stl10,svhn,synth}_tools.py`. They are loaded automatically by setting the flag `package` in `{train,eval}.py` accordingly.
+In order to reproduce the results from the paper, please use the architectures and pipelines from the `tools/{stl10,svhn,synth}.py`. They are loaded automatically by setting the flag `[target_]dataset` in `{train,eval}.py` accordingly.
 
 Before you get started, please make sure to add the following to your `~/.bashrc`:
 ```
