@@ -294,10 +294,10 @@ def main(argv):
 
             # Add virtual embeddings.
             if FLAGS.virtual_embeddings:
-                t_sup_emb = tf.concat(0, [
+                t_sup_emb = tf.concat([
                     t_sup_emb, semisup.create_virt_emb(FLAGS.virtual_embeddings,
                                                        FLAGS.emb_size)
-                ])
+                ], 0)
 
                 if not FLAGS.remove_classes:
                     # need to add additional labels for virtual embeddings
