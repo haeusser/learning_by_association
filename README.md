@@ -14,8 +14,8 @@ export PYTHONPATH=/path/to/learning_by_association:$PYTHONPATH
 
 Copy the file `semisup/tools/data_dirs.py.template` to `semisup/tools/data_dirs.py`, adapt the paths and .gitignore this file.
 
-## Hyper parameters
-### Synth. Signs --Y> GTSRB
+## Domain Adaptation Hyper parameters
+### Synth. Signs -> GTSRB
 ```
 "target_dataset": "gtsrb",
 "walker_weight_envelope_delay": "0",
@@ -34,7 +34,7 @@ Copy the file `semisup/tools/data_dirs.py.template` to `semisup/tools/data_dirs.
 "architecture": "svhn_model"
 ```
 
-### MNIST --> MNIST-M
+### MNIST -> MNIST-M
 ```
 "target_dataset": "mnistm",
 "walker_weight_envelope_delay": "500",
@@ -54,7 +54,7 @@ Copy the file `semisup/tools/data_dirs.py.template` to `semisup/tools/data_dirs.
 "max_steps": "12000",
 ```
 
-### SVHN --> MNIST
+### SVHN -> MNIST
 ```
 "target_dataset": "mnist3",
 "walker_weight_envelope_delay": "500",
